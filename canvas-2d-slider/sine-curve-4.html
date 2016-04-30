@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript">
+            function draw() {
+                // get values directly from form
+                var Vp = document.getElementById("vp").value;
+                var fo = document.getElementById("fo").value;
+                var phase = document.getElementById("phase").value;
+                var Vmax = document.getElementById("vmax").value;
+                var Tmax = document.getElementById("tmax").value;
+                var N = document.getElementById("n").value;
+                Vp = Number(Vp);
+                fo = Number(fo);
+                phase = Number(phase);
+                Vmax = Number(Vmax);
+                Tmax = Number(Tmax);
+                N = Number(N);
+
+                // define canvas
+                var canvas = document.getElementById("canvas2D");
+                if (null == canvas || !canvas.getContext)
+                    return;
+                ctx = canvas.getContext("2d");
+
+                // fill canvas
+                ctx.fillStyle = "#dddddd";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // define origin at plot center
+                var axes = {};
+                axes.x0 = 0.5 + 0.5 * canvas.width;  // x0, y0 place plot origin in middle of canvas
+                axes.y0 = 0.5 + 0.5 * canvas.height;
+
+                // draw axes
+                showAxes(ctx, axes);
+
+                var x = new Array(), y = new Array();  // x,y plotting variables
+                var dt, tstart, tstop;             // time variables
+
+                // define plot paramaters
+                tstart = -Tmax;
+                tstop = Tmax;
+                dt = (tstop - tstart) / (N - 1);				// time increment over N points
+                axes.xscale = (canvas.width) / (2 * Tmax); 	// x pix per s
+                axes.yscale = (canvas.height) / (2 * Vmax);    // y pix per V
+                axes.N = N;
+
+
+                // create function 
+                for (i = 0; i < N; i++) {
+                    x[i] = tstart + i * dt;
+                    y[i] = Vp * Math.sin(2 * 3.1415 * fo * x[i] + phase * 3.1415 / 180);
+                }
+
+                // display variables for debug, remove /* and */
+                /*
+                 alert(   "N=" + N + "\n"
+                 + "dt=" + dt + "\n"
+                 + "tstart=" + tstart + "\n"
+                 + "tstop=" + tstop + "\n"    
+                 + "fo=" + fo + "\n"  
+                 + "x[50]=" + x[50] + "\n"        );
+                 */
+
+                // plot function
+                GraphArray(ctx, axes, x, y, "rgb(0,0,256)", 1);
+
+            }
+
+///////////////////////////////////////////////////////
+            function GraphArray(ctx, axes, x, y, color, thick) {
+
+                var i, x0, y0, xscale, yscale, xp, yp;
+
+                x0 = axes.x0;
+                y0 = axes.y0;
+                xscale = axes.xscale;
+                yscale = axes.yscale;
+
+                ctx.beginPath();
+                ctx.lineWidth = thick;
+                ctx.strokeStyle = color;
+
+                for (i = 0; i < axes.N; i++) {
+                    // translate actual x,y to plot xp,yp
+                    xp = x0 + x[i] * xscale;
+                    yp = y0 - y[i] * yscale;
+
+                    // draw ine to next point
+                    if (i == 0)
+                        ctx.moveTo(xp, yp);
+                    else
+                        ctx.lineTo(xp, yp);
+                }
+
+                ctx.stroke();
+            }
+//////////////////////////////////////////////////////
+            function showAxes(ctx, axes) {
+                var x0 = axes.x0, w = ctx.canvas.width;
+                var y0 = axes.y0, h = ctx.canvas.height;
+
+                ctx.beginPath();
+                ctx.strokeStyle = "rgb(128,128,128)";
+                ctx.moveTo(0, y0);
+                ctx.lineTo(w, y0);  // X axis
+                ctx.moveTo(x0, 0);
+                ctx.lineTo(x0, h);  // Y axis
+                ctx.stroke();
+
+            }
+            function sliderChange() {
+                var sliderVal = document.getElementById("pick-voltage-slider").value;
+                document.getElementById("vp").value = sliderVal;
+                document.getElementById("pick-voltage-value").value = sliderVal;
+                draw();
+            }
+        </script>
+    </head>
+    <body onload="draw()">
+        <h2>Draw a Sine Wave on the Canvas</h2>
+        <p style="text-align: justify"> 
+            Enter the amplitude, frequency and phase of your sine wave, along with the 
+            display parameters. The JavaScript code draws the sine wave on the canvas.
+        </p>
+
+        <div id="canvas-container" style="width: 500px; height: 300px;">
+            <canvas id="canvas2D" style="width: 500px; height: 300px;border:1px solid #000000;" width="500" height="300"></canvas>
+        </div>
+
+        <div id="controll-container" style="padding-top: 10px;">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Vp (V) Peak Voltage</td>
+                        <td><input id="vp" type="text" name="Vp" size="10" value="1"></td>
+                    </tr>
+                    <tr>
+                        <td>fo (Hz) Sine frequency</td>
+                        <td><input id="fo" type="text" name="fo" size="10" value="1000"></td>
+                    </tr>
+                    <tr>
+                        <td>Phase (deg) Time Shift</td>
+                        <td><input id="phase" type="text" name="phase" size="10" value="0"></td>
+                    </tr>
+                    <tr>
+                        <td>Vmax (V) for plot</td>
+                        <td><input id="vmax" type="text" name="Vmax" size="10" value="2"></td>
+                    </tr>
+                    <tr>
+                        <td>Tmax (s) for plot</td>
+                        <td><input id="tmax" type="text" name="Tmax" size="10" value="0.001"></td>
+                    </tr>
+                    <tr>
+                        <td>Npoints for plot</td>
+                        <td><input id="n" type="text" name="N" size="10" value="101"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="button" value="Draw" onclick="draw()"></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+        <h2>Pick Voltage Controller by Slider</h2>
+        <div id="pick-voltage-controller">
+            <input id="pick-voltage-slider" type="range" min="-2" max="2" step="0.1" value="0" oninput="sliderChange()">
+            <input id="pick-voltage-value" type="text" size="2" value="0">
+        </div>
+    </body>
+</html>

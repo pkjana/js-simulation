@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Check the Number Palindrome or Not</title>
+    </head>
+    <body>
+        <h3>Check the Number Palindrome or Not</h3>
+        <script language="javascript">
+            var n, s = 0, r, k;
+            n = eval(prompt("Enter the value of n", "n"));
+            k = n;
+            while (n != 0) {
+                r = n % 10;
+                s = 10 * s + r;
+                n = parseInt(n / 10);
+            }
+            if (k == s) {
+                document.write("The number " + k + " is palindrome");
+            } else {
+                document.write("The number " + k + " is not palindrome");
+            }
+        </script>
+    </body>
+</html>

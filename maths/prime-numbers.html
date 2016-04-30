@@ -1,0 +1,34 @@
+<html>
+    <head>
+        <script type="text/javascript">
+            function isPrime(n) {
+                for (var i = 2; i <= Math.sqrt(n); ++i)
+                    if (n % i === 0)
+                        return false;
+                return true;
+            }
+            function primeList(N) {
+                var list = [];
+                for (var i = 2; i != N; ++i)
+                    if (isPrime(i))
+                        list.push(i);
+                return list;
+            }
+            function testPrime() {
+                var n = prompt("Enter Number", "number");
+                document.write("Number is prime: " + isPrime(n));
+            }
+            function printPrime() {
+                var n = prompt("Enter Number", "number");
+                document.write("List of prime numbers: " + primeList(n));
+            }
+
+        </script>
+    </head>
+    <body>
+        <h2>Test prime numbers</h2>
+        <button onclick="testPrime()">Prime Number Test</button>
+        <h2>Print list of prime numbers</h2>
+        <button onclick="printPrime()">Prime Numbers</button>
+    </body>
+</html>

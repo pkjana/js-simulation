@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <title>Armstrong Numbers Between Two Numbers</title>
+    </head>
+    <body>
+        <h3>Armstrong Numbers Between Two Numbers</h3>
+        <script language="javascript">
+            var a, b, n, c, k, p, rem, s;
+            a = eval(prompt("Enter the value of a", "a"));
+            b = eval(prompt("Enter the value of b", "b"));
+            for (n = a; n <= b; n++) {
+                k = n;
+                p = n;
+                c = 0;
+                while (k != 0) {
+                    c++;
+                    k = parseInt(k / 10);
+                }
+                s = 0;
+                while (p != 0) {
+                    rem = p % 10;
+                    s += Math.pow(rem, c);
+                    p = parseInt(p / 10);
+                }
+                if (s == n)
+                    document.write("<br/> " + n);
+            }
+        </script>
+    </body>
+</html>

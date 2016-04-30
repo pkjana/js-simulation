@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>Check the Number is Armstrong Number or Not</title>
+    </head>
+    <body>
+        <h3>Check the Number is Armstrong Number or Not</h3>
+        <script language="javascript">
+            var c = 0, n, rem, k, p, s = 0;
+            n = eval(prompt("Enter the value of n", "n"));
+            k = n;
+            p = n;
+            while (k != 0) {
+                c++;
+                k = parseInt(k / 10);
+            }
+            alert(c);
+            while (p != 0) {
+                rem = p % 10;
+                s += Math.pow(rem, c);
+                p = parseInt(p / 10);
+            }
+            if (s == n)
+                document.write("The number " + n + " is amstrong number");
+            else
+                document.write("The number " + n + " is not amstrong number");
+
+        </script>
+    </body>
+</html>

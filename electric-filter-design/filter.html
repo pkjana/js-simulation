@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>FIR Simulation</title>
+        <meta charset="windows-1252">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div>
+            <style type="text/css" media="screen">
+                @import "2ColStickyScroll-10.css";
+                @import "contentStyle-16.css";
+                @import "console-39.css";
+                @import "frontPanel-12.css";
+
+                #coeffsList {
+                    height: 17em;
+                    margin: 0.5em 0 0 2em;
+                    /*//font-family: Inconsolata, monospace;  /* force the font to load */
+                    font-size: 13px;
+                    line-height:17px;
+                    text-align: right;
+                    border: 4px solid;
+                    border-color: #c4c4b0 #f8f7f3 #f8f7f3 #c4c4b0;
+                    resize: none;
+                }
+
+                .valueReadout {
+                    margin-bottom: 4px;
+                }
+
+                .screenCvs {
+                    margin-top: 20px;
+                }
+            </style>
+
+            <!-- 'indexNested.js' defines the global 'var indexData' holding menu entries  -->
+            <script type="text/javascript" src="./Digital Filter Design_files/indexNested.js"></script>
+
+            <script type="text/javascript">
+                var sidebar = null,
+                        sidebar_top = 100;
+
+                if (typeof addLoadEvent === "undefined")
+                {
+                    var addLoadEvent = function (func)
+                    {
+                        var oldonload = window.onload;
+                        if (typeof window.onload != 'function')
+                        {
+                            window.onload = func;
+                        }
+                        else
+                        {
+                            window.onload = function () {
+                                oldonload();
+                                func();
+                            }
+                        }
+                    }
+                }
+
+                if (typeof addEvent === "undefined")
+                {
+                    var addEvent = function (element, eventType, handler)
+                    {
+                        if (element.attachEvent)
+                        {
+                            return element.attachEvent('on' + eventType, handler);
+                        }
+                        return element.addEventListener(eventType, handler, false);
+                    };
+                }
+
+                function cancelBubble(e)
+                {
+                    var evt = e ? e : window.event;
+                    if (evt.stopPropagation)
+                        evt.stopPropagation();
+                    if (evt.cancelBubble != null)
+                        evt.cancelBubble = true;
+                }
+
+                /* -------------------------------------------------------------------------
+                 * buildMenu(dataArray)
+                 *
+                 * dataArray should be in JSON format as follows
+                 * [ {"url":"url of file", "title":"String to display in index"},
+                 *   {"url":"url of file", "title":"String to display in index",
+                 *    "chapters": [
+                 *       {"url":"url of file", "title":"String to display in index"},
+                 *       {"url":"url of file", "title":"String to display in index"},
+                 *       ...
+                 *       {"url":"url of file", "title":"String to display in index"}
+                 *     ]
+                 *   },
+                 *   {"url":"url of file", "title":"String to display in index"},
+                 *   ...
+                 * ]
+                 * Then build HTML anchors from the array.
+                 *--------------------------------------------------------------------------*/
+                function buildMenu(dataArray)
+                {
+                    var menuNode = document.getElementById("sideNav"),
+                            htmlStr = "",
+                            currPage,
+                            i;
+
+                    function subStringReplaceAt(str, index, newSubStr, oldSubStrLength)
+                    {
+                        return str.slice(0, index) + newSubStr + str.slice(index + oldSubStrLength);
+                    }
+
+                    function parseAry(obj)
+                    {
+                        var currPage = document.URL.replace(/^.*[\\\/]/, ''), // split off the page name (cross platform)
+                                i;
+                        for (i = 0; i < obj.length; i++)
+                        {
+                            if (obj[i].chapters)
+                            {
+                                htmlStr += "<ul>";
+                                htmlStr += "<li class='sectClosed'><input type='button' onclick='toggleSection(this)' value='" + obj[i].title + "'><ul class='options'>";
+                                parseAry(obj[i].chapters);
+                                htmlStr += "</ul></li>";
+                            }
+                            else
+                            {
+                                htmlStr += "<li><a href='" + obj[i].url + "' target='_top'>" + obj[i].title + "</a></li>";
+                                // check if this index entry is the current page, if open this section to show link
+                                if (currPage == obj[i].url)
+                                {
+                                    htmlStr = subStringReplaceAt(htmlStr, htmlStr.lastIndexOf("sectClosed"), "sectOpen", 10);
+                                }
+                            }
+                        }
+                    }
+
+                    parseAry(dataArray);
+                    menuNode.innerHTML += htmlStr;
+                }
+
+                function toggleSection(btn)
+                {
+                    if (btn && btn.parentNode.className === "sectClosed")
+                    {
+                        btn.parentNode.className = "sectOpen";
+                    }
+                    else if (btn && btn.parentNode.className === "sectOpen")
+                    {
+                        btn.parentNode.className = "sectClosed";
+                    }
+                    return false;   // is used with anchor will prevent going to href
+                }
+
+                function sidebar_reset_top(ev)
+                {
+                    var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+
+                    if (scrollTop > sidebar_top && sidebar.className === "sidebar_absolute")
+                    {
+                        sidebar.className = "sidebar_fixed";
+                    }
+                    else if (scrollTop < sidebar_top && sidebar.className === "sidebar_fixed")
+                    {
+                        sidebar.className = "sidebar_absolute";
+                    }
+                    cancelBubble(ev);
+                }
+
+                function enableStickyNav()
+                {
+                    sidebar = document.getElementById("sidebar");
+                    addEvent(window, "scroll", sidebar_reset_top);
+                }
+            </script>
+
+
+
+            <script type="text/javascript" src="./Cango-7v10-min.js"></script>
+            <script type="text/javascript" src="./firFilter-11.js"></script>
+            <script type="text/javascript" src="./dspUtils-11.js"></script>
+            <script type="text/javascript" src="./CangoAxes-1v31.js"></script>
+
+            <script type="text/javascript">
+
+                function genFilter()
+                {
+                    var panel = document.getElementById("panelSA1"),
+                            Fs = parseFloat(panel.fs.value),
+                            Fa = parseFloat(panel.fa.value),
+                            Fb = parseFloat(panel.fb.value),
+                            M = parseFloat(panel.nPts.value),
+                            Att = parseFloat(panel.att.value),
+                            stopBand = panel.fType[3].checked,
+                            kb1 = new KaiserFIR(Fs, Fa, Fb, M, Att),
+                            j;
+
+                    if (stopBand)
+                    {
+                        for (j = 0; j < kb1.M; j++)
+                        {
+                            kb1.coeffs[j] *= -1;
+                        }
+                        kb1.coeffs[kb1.Np] += 1;
+                    }
+                    kb1.plotFreqResp("scrn1");
+                    kb1.plotCoeffs("scrn2");
+                    kb1.listCoeffs("coeffsList");
+                }
+
+                function setType(type)
+                {
+                    var panel = document.getElementById("panelSA1"),
+                            Fs = parseFloat(panel.fs.value);
+
+                    // re-enable on any change
+                    panel.fa.disabled = false;
+                    panel.fb.disabled = false;
+
+                    if (type == 1)
+                    {
+                        panel.fa.value = 0;
+                        panel.fa.disabled = true;
+                        panel.fb.value = Math.round(0.4 * Fs);
+                    }
+                    if (type == 2)
+                    {
+                        panel.fa.value = Math.round(0.1 * Fs);
+                        panel.fb.value = Math.round(Fs / 2);
+                        panel.fb.disabled = true;
+                    }
+
+                    plotShape('grph1', type)
+                }
+
+                function checkForm()
+                {
+                    var panel = document.getElementById("panelSA1"),
+                            Fa = parseInt(panel.fa.value),
+                            Fb = parseInt(panel.fb.value),
+                            Fs = parseInt(panel.fs.value),
+                            Att = parseInt(panel.att.value),
+                            Df = parseInt(panel.df.value),
+                            N = parseInt(panel.nPts.value);
+
+                    if (Att < 21)
+                    {
+                        Att = 21;
+                    }
+                    if (N < 3)
+                    {
+                        N = 3;
+                    }
+                    if (2 * Math.floor(N / 2) == N)   // if even
+                    {
+                        N += 1;   // force oddness
+                    }
+                    if (N > 500)
+                    {
+                        alert("N too large (N<500)");
+                        N = 499;
+                    }
+                    if (Fa < 0)
+                    {
+                        Fa = 0;
+                    }
+                    if (Fb < 1)
+                    {
+                        Fb = 1;
+                    }
+                    if (Fb > Fs / 2)
+                    {
+                        Fb = Math.round(Fs / 2);
+                    }
+                    if (Fa > Fs / 2)
+                    {
+                        Fb = Math.round(Fs / 2) - 1;
+                    }
+                    if (Fa > Fb)
+                    {
+                        Fa = Fb - 1;
+                    }
+                    if (Fb < Fa)
+                    {
+                        Fb = Fa + 1;
+                    }
+
+                    panel.fa.value = Fa;
+                    panel.fb.value = Fb;
+                    panel.nPts.value = N;
+                    panel.df.value = Math.round(Fs * (Att - 8) / (28.72 * (N - 1)));
+                    panel.fs.value = Fs;
+                    panel.att.value = Att;
+                }
+
+                function plotShape(cvsID, type)
+                {
+                    var g = new Cango(cvsID);
+
+                    g.setGridboxRHC();
+                    g.clearCanvas();
+                    g.setGridboxRHC(10, 15, 70, 50);
+                    g.setWorldCoords(0, 0, 100, 100);
+                    // draw grid
+                    g.drawPath(['M', 0, 0, 'L', 100, 0, 'M', 0, 0, 'L', 0, 70, 'M', 100, 0, 'L', 100, 70], 0, 0, {strokeColor: 'rgba(128, 128, 128, 0.6)'});
+                    g.drawText("0", 0, -10, {fillColor: 'black', fontSize: 12, lorg: 2});
+                    g.drawText("Fs/2", 100, -10, {fillColor: 'black', fontSize: 12, lorg: 2});
+                    switch (type)
+                    {
+                        case 1:
+                        default:
+                            g.drawPath(['M', 0, 50, 'L', 40, 50, 40, 0, 100, 0], 0, 0, {strokeColor: 'black'});
+                            g.drawPath(['M', 40, 0, 'L', 40, 70], 0, 0, {strokeColor: 'rgba(128, 128, 128, 0.6)'});
+                            g.drawText("Fa", 0, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            g.drawText("Fb", 40, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            break;
+                        case 2:
+                            g.drawPath(['M', 0, 0, 'L', 60, 0, 60, 50, 100, 50], 0, 0, {strokeColor: 'black'});
+                            g.drawPath(['M', 60, 0, 'L', 60, 70], 0, 0, {strokeColor: 'rgba(128, 128, 128, 0.6)'});
+                            g.drawText("Fa", 60, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            g.drawText("Fb", 100, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            break;
+                        case 3:
+                            g.drawPath(['M', 0, 0, 'L', 30, 0, 30, 50, 60, 50, 60, 0, 100, 0], 0, 0, {strokeColor: 'black'});
+                            g.drawPath(['M', 30, 0, 'L', 30, 70, 'M', 60, 0, 'L', 60, 70], 0, 0, {strokeColor: 'rgba(128, 128, 128, 0.6)'});
+                            g.drawText("Fa", 30, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            g.drawText("Fb", 60, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            break;
+                        case 4:
+                            g.drawPath(['M', 0, 50, 'L', 30, 50, 30, 0, 60, 0, 60, 50, 100, 50], 0, 0, {strokeColor: 'black'});
+                            g.drawPath(['M', 30, 0, 'L', 30, 70, 'M', 60, 0, 'L', 60, 70], 0, 0, {strokeColor: 'rgba(128, 128, 128, 0.6)'});
+                            g.drawText("Fa", 30, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            g.drawText("Fb", 60, 80, {fillColor: 'black', fontSize: 12, lorg: 8});
+                            break;
+                    }
+                }
+            </script>
+
+            <script type="text/x-mathjax-config;executed=true">
+                MathJax.Hub.Config({
+                displayAlign: "left",
+                displayIndent: "2em",
+                TeX: {
+                extensions: ["AMSmath.js"],
+                TagIndent: "20em"
+                },
+                styles: {
+                ".MathJax": { color: "#404040" }
+                },
+                "HTML-CSS": { scale: 95 }
+                });
+            </script>
+            <script type="text/javascript" src="./Digital Filter Design_files/MathJax.js"></script>
+
+            <script type="text/javascript">
+                addLoadEvent(function () {
+                    buildMenu(indexData);
+                    plotShape('grph1', 1);
+                    checkForm();
+                    genFilter();
+                    enableStickyNav();
+                });
+            </script>
+
+            <style type="text/css">.MathJax_Preview {color: #888}
+                #MathJax_Message {position: fixed; left: 1em; bottom: 1.5em; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+                #MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+                .MathJax_Error {color: #CC0000; font-style: italic}
+                .MathJax {color: #404040}
+            </style><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+                .MathJax_Hover_Arrow {position: absolute; width: 15px; height: 11px; cursor: pointer}
+            </style><style type="text/css">.MathJax_Display {text-align: center; margin: 1em 0em; position: relative; display: block!important; text-indent: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; width: 100%}
+                .MathJax .merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+                .MathJax .MJX-monospace {font-family: monospace}
+                .MathJax .MJX-sans-serif {font-family: sans-serif}
+                #MathJax_Tooltip {background-color: InfoBackground; color: InfoText; border: 1px solid black; box-shadow: 2px 2px 5px #AAAAAA; -webkit-box-shadow: 2px 2px 5px #AAAAAA; -moz-box-shadow: 2px 2px 5px #AAAAAA; -khtml-box-shadow: 2px 2px 5px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true'); padding: 3px 4px; z-index: 401; position: absolute; left: 0; top: 0; width: auto; height: auto; display: none}
+                .MathJax {display: inline; font-style: normal; font-weight: normal; line-height: normal; font-size: 100%; font-size-adjust: none; text-indent: 0; text-align: left; text-transform: none; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0; min-height: 0; border: 0; padding: 0; margin: 0}
+                .MathJax img, .MathJax nobr, .MathJax a {border: 0; padding: 0; margin: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+                img.MathJax_strut {border: 0!important; padding: 0!important; margin: 0!important; vertical-align: 0!important}
+                .MathJax span {display: inline; position: static; border: 0; padding: 0; margin: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+                .MathJax nobr {white-space: nowrap!important}
+                .MathJax img {display: inline!important; float: none!important}
+                .MathJax * {transition: none; -webkit-transition: none; -moz-transition: none; -ms-transition: none; -o-transition: none}
+                .MathJax_Processing {visibility: hidden; position: fixed; width: 0; height: 0; overflow: hidden}
+                .MathJax_Processed {display: none!important}
+                .MathJax_ExBox {display: block!important; overflow: hidden; width: 1px; height: 60ex; min-height: 0; max-height: none}
+                .MathJax .MathJax_EmBox {display: block!important; overflow: hidden; width: 1px; height: 60em; min-height: 0; max-height: none}
+                .MathJax .MathJax_HitBox {cursor: text; background: white; opacity: 0; filter: alpha(opacity=0)}
+                .MathJax .MathJax_HitBox * {filter: none; opacity: 1; background: transparent}
+                #MathJax_Tooltip * {filter: none; opacity: 1; background: transparent}
+                @font-face {font-family: MathJax_Main; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Main-bold; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Bold.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Main-italic; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Italic.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Math-italic; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Caligraphic; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Regular.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Size1; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size1-Regular.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Size2; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size2-Regular.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Size3; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size3-Regular.otf?rev=2.5.3') format('opentype')}
+                @font-face {font-family: MathJax_Size4; src: url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff?rev=2.5.3') format('woff'), url('http://cdn.mathjax.org/mathjax/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size4-Regular.otf?rev=2.5.3') format('opentype')}
+            </style>
+            <style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+                .MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+                .MathJax_MenuItem {padding: 2px 2em; background: transparent}
+                .MathJax_MenuArrow {position: absolute; right: .5em; color: #666666}
+                .MathJax_MenuActive .MathJax_MenuArrow {color: white}
+                .MathJax_MenuArrow.RTL {left: .5em; right: auto}
+                .MathJax_MenuCheck {position: absolute; left: .7em}
+                .MathJax_MenuCheck.RTL {right: .7em; left: auto}
+                .MathJax_MenuRadioCheck {position: absolute; left: 1em}
+                .MathJax_MenuRadioCheck.RTL {right: 1em; left: auto}
+                .MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+                .MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+                .MathJax_MenuDisabled {color: GrayText}
+                .MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+                .MathJax_Menu_Close {position: absolute; width: 31px; height: 31px; top: -15px; left: -15px}
+            </style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+                #MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+                #MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+                #MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+            </style>    
+
+            <div class="consoleHolder">
+                <div class="console">
+                    <div class="bezel">
+                        <div class="scrnBevel">
+
+                            <div class="screenHolder" style="width:700px; height:595px;">
+                                <div class="ctrlPanel" style="width:19.3em; height: 565px;">
+
+                                    <div class="blkTop" style="height:275px">
+                                        <div class="blkTitle">Kaiser FIR Design</div>
+                                        <form id="panelSA1" action="http://www.arc.id.au/FilterDesign.html#" name="panelSA1">
+                                            <table style="vertical-align:bottom">
+                                                <tbody><tr>
+                                                        <td style="width:50%;">
+                                                            <div class="roundedOne" style="margin: 0 5em 0 0;">
+                                                                <input type="radio" name="fType" value="lp" id="typelp" onclick="setType(1)" checked="checked">
+                                                                <label for="typelp"><span>Low&nbsp;Pass</span></label>
+                                                            </div>
+                                                            <div class="roundedOne" style="margin: 0.5em 5em 0 0;">
+                                                                <input type="radio" name="fType" value="hp" id="typehp" onclick="setType(2)">
+                                                                <label for="typehp"><span>High&nbsp;Pass</span></label>
+                                                            </div>
+                                                            <div class="roundedOne" style="margin: 0.5em 5em 0 0;">
+                                                                <input type="radio" name="fType" value="bp" id="typebp" onclick="setType(3)">
+                                                                <label for="typebp"><span>Band&nbsp;Pass</span></label>
+                                                            </div>
+                                                            <div class="roundedOne" style="margin: 0.5em 5em 0 0;">
+                                                                <input type="radio" name="fType" value="bs" id="typebs" onclick="setType(4)">
+                                                                <label for="typebs"><span>Band&nbsp;Stop</span></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div>
+                                                                <canvas id="grph1" width="125" height="80" style="margin-top:0.5em;"></canvas>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                    <tr style="vertical-align:bottom; height:1.4em">
+                                                        <td>
+                                                            <label class="valueLabel" for="fa">Fa</label>
+                                                        </td>
+                                                        <td style="">
+                                                            <label class="valueLabel" for="fb">Fb</label>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <input id="fa" class="valueReadout" value="0" style="text-align:right; width:5em" type="text" onchange="checkForm()">
+                                                            <label class="valueLabel" for="fa" style="margin: 6px 0 0 7em">Hz</label>
+                                                        </td>
+                                                        <td>
+                                                            <input id="fb" class="valueReadout" value="600" style="text-align:right; width:5em" type="text" onchange="checkForm()">
+                                                            <label class="valueLabel" for="fb" style="margin: 6px 0 0 7em">Hz</label>
+                                                        </td>
+                                                    </tr>
+                                                    <tr style="vertical-align:bottom">
+                                                        <td>
+                                                            <label class="valueLabel">M(odd) length</label>
+                                                        </td>
+                                                        <td>
+                                                            <label class="valueLabel">dF/2</label>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <input id="nPts" class="valueReadout" value="37" style="text-align:right; width:5em" type="text" onchange="checkForm()">
+                                                            <label class="valueLabel" for="nPts" style="margin: 6px 0 0 7em">Pts</label>
+                                                        </td>
+                                                        <td>
+                                                            <input id="df" class="valueReadout" value="412" style="text-align:right; width:5em" type="text" disabled="disabled" onchange="checkForm()">
+                                                            <label class="valueLabel" for="df" style="margin: 6px 0 0 7em">Hz</label>
+                                                        </td>
+                                                    </tr>
+                                                    <tr style="vertical-align:bottom">
+                                                        <td>
+                                                            <label class="valueLabel">Fs (Sample Freq)</label>
+                                                        </td>
+                                                        <td>
+                                                            <label class="valueLabel">Att (&gt;21dB)</label>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <input id="fs" class="valueReadout" value="4096" style="text-align:right; width:5em" type="text" onchange="checkForm()">
+                                                            <label class="valueLabel" for="fs" style="margin: 6px 0 0 7em">Hz</label>
+                                                        </td>
+                                                        <td>
+                                                            <input id="att" class="valueReadout" value="60" style="text-align:right; width:5em" type="text" onchange="checkForm()">
+                                                            <label class="valueLabel" for="att" style="margin: 6px 0 0 7em">dB</label>
+                                                        </td>
+                                                    </tr>
+                                                    <tr style="vertical-align:bottom; height:2.2em">
+                                                        <td colspan="2" style="text-align:center;">
+                                                            <button type="button" id="calcFIR" class="button-link" onclick="genFilter();" style="display:inline;width: 8em">CALC FILTER</button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody></table>
+                                        </form>
+                                    </div>
+
+                                    <div class="blkTop" style="margin-top: 20px; height:240px">
+                                        <div class="blkTitle">FIR Listing</div>
+                                        <textarea id="coeffsList" rows="16" cols="15" readonly="readonly">[0.000273, 
+-0.000048, 
+-0.001189, 
+-0.002211, 
+-0.001122, 
+0.002954, 
+0.007348, 
+0.006495, 
+-0.002967, 
+-0.016274, 
+-0.020640, 
+-0.004835, 
+0.027313, 
+0.051740, 
+0.035997, 
+-0.036675, 
+-0.148600, 
+-0.251326, 
+0.707031, 
+-0.251326, 
+-0.148600, 
+-0.036675, 
+0.035997, 
+0.051740, 
+0.027313, 
+-0.004835, 
+-0.020640, 
+-0.016274, 
+-0.002967, 
+0.006495, 
+0.007348, 
+0.002954, 
+-0.001122, 
+-0.002211, 
+-0.001189, 
+-0.000048, 
+0.000273] </textarea>
+                                    </div>
+                                </div>
+
+                                <div class="screenCvs">
+                                    <canvas id="scrn1" width="385" height="285"></canvas>
+                                </div>
+
+                                <div class="screenCvs">
+                                    <canvas id="scrn2" width="385" height="250"></canvas>
+                                </div>
+
+                            </div> <!-- screenHolder  -->
+                        </div>   <!-- scrnBevel -->
+
+                    </div>  <!-- bezel -->
+                    <div style="clear: both"></div>
+
+                </div> <!-- console -->
+
+            </div>   <!-- consoleHolder -->
+
+
+
+
+
+
+
+
+
+
+
+
+        </div>
+    </body>
+</html>

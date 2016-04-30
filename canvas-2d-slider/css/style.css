@@ -1,0 +1,43 @@
+#main-wrapper{
+    border-radius: 5px;    
+    background-color: lightgrey;
+    width: 800px;
+    height: 425px;
+    padding: 5px;
+    border: 2px solid navy;
+    margin: 10px;
+}
+#canvas-2d-wrapper{
+    float: left;
+    width: 400px;
+}
+#canvas-2d-title, #controller-title, #data-title{
+    height: 25px;
+    color: #638EA8;
+    background-color: #E4EAED;    
+    border-top: 1px #85A8C2 solid;
+    border-right: 1px #85A8C2 solid;
+    border-bottom: 1px #85A8C2 solid;
+    border-left: 1px #85A8C2 solid;    
+    font-size: 16px;
+    font-weight: bold;
+    padding-left: 5px;
+}
+#canvas-2d-view{
+    background-color: black;
+    height: 400px;   
+
+}
+#controller-data-wrapper{
+    padding-left: 405px;
+}
+#controller-wrapper{}
+#data-wrapper{}
+#controller-view{
+    height: 200px;
+
+}
+#data-view{
+    height: 200px;
+
+}

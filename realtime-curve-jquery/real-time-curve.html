@@ -1,0 +1,117 @@
+<html>
+<head>
+    <!-- http://fastly.github.io/epoch/real-time/ -->
+<!-- <link rel="stylesheet" href="./bootstrap.min.css"> -->
+       <!-- <link rel="stylesheet" href="./syntax.css"> -->
+    <!--    <link rel="stylesheet" href="./epoch.css"> -->
+   <!--     <link rel="stylesheet" href="./site.css"> -->
+		
+<link rel="stylesheet" type="text/css" href="./epoch.min.css">
+
+<script type="text/javascript" src="./jquery-1.11.3.min.js"></script>
+
+
+       <!-- <script src="./bootstrap.min.js"></script> -->
+        <script src="./d3.js"></script>
+       <script src="./epoch.js"></script>
+        <script src="./data.js"></script>
+        <!-- <script src="./ZeroClipboard.min.js"></script> -->
+</head>
+<body>
+
+<div id="real-time-area" class="epoch" style="width: 700px; height: 250px"></div>
+<div id="real-time-bar" class="epoch" style="width: 700px; height: 250px"></div>
+<div id="real-time-line" class="epoch" style="width: 800px; height: 200px"></div>
+
+<div class="gauges">
+    <div id="real-time-gauge4" class="epoch gauge-large" style="position: relative;" data-epoch-container-id="epoch-container-5"></div>
+    <div id="real-time-gauge" class="epoch gauge-medium" style="position: relative;" data-epoch-container-id="epoch-container-2"></div>
+    <div id="real-time-gauge2" class="epoch gauge-small" style="position: relative;" data-epoch-container-id="epoch-container-3"></div>
+    <div id="real-time-gauge3" class="epoch gauge-tiny" style="position: relative;" data-epoch-container-id="epoch-container-4"></div>
+</div>
+
+
+
+
+<script>
+  $('#lineChart').epoch({
+    type: 'line',
+    data: lineChartData
+  });
+  var lineChartData = [
+  // The first series
+  {
+    label: "Series 1",
+    values: [ {x: 0, y: 100}, {x: 20, y: 1000}]
+  },
+
+  // The second series
+  {
+    label: "Series 2",
+    values: [ {x: 20, y: 78}, {x: 30, y: 98} ]
+  }  
+];
+
+$(function() {
+    var data = new RealTimeData(4);
+
+    var chart = $('#real-time-area').epoch({
+        type: 'time.area',
+        data: data.history(),
+        axes: ['left', 'bottom', 'right']
+    });
+    
+    setInterval(function() { chart.push(data.next()); }, 1000);
+    chart.push(data.next());
+});
+
+$(function() {
+    var data = new RealTimeData(3);
+
+    var chart = $('#real-time-bar').epoch({
+        type: 'time.bar',
+        data: data.history(),
+        axes: ['left', 'bottom', 'right']
+    });
+
+    setInterval(function() { chart.push(data.next()); }, 1000);
+    chart.push(data.next());
+});
+
+$(function() {
+    var data = new RealTimeData(2);
+
+    var chart = $('#real-time-line').epoch({
+        type: 'time.line',
+        data: data.history(),
+        axes: ['left', 'bottom', 'right']
+    });
+
+    setInterval(function() { chart.push(data.next()); }, 1000);
+    chart.push(data.next());
+});
+
+$(function() {
+    var data = new GaugeData();
+
+    var charts = [
+        $('#real-time-gauge').epoch({ type: 'time.gauge', value: data.next() }),
+        $('#real-time-gauge2').epoch({ type: 'time.gauge', value: data.next() }),
+        $('#real-time-gauge3').epoch({ type: 'time.gauge', value: data.next() }),
+        $('#real-time-gauge4').epoch({ type: 'time.gauge', value: data.next() })
+    ];
+
+    function updateCharts() {
+        for (var i = 0; i < charts.length; i++) {
+            charts[i].update(data.next());
+        }
+    }
+
+    setInterval(updateCharts, 1000);
+    updateCharts();
+});
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <script type="text/javascript">
+            var looping = function (n) {
+                var a = 0, b = 1, f = 1;
+                for (var i = 2; i <= n; i++) {
+                    f = a + b;
+                    a = b;
+                    b = f;
+                }
+                return f;
+            };
+            var recursive = function (n) {
+                if (n <= 2) {
+                    return 1;
+                } else {
+                    return this.recursive(n - 1) + this.recursive(n - 2);
+                }
+            };
+            function fibo(n) {
+                var f = [];
+                for (var c = 0; c < n; ++c) {
+                    f.push((c < 2) ? c : f[c - 1] + f[c - 2]);
+                }
+                return f;
+            }
+            function printFibo(){
+                var n=prompt("How many fibonacci number do you want to print","number");
+                document.write("Fibonacci Series by array: "+fibo(n));                
+                //document.write("<br/>Fibonacci Series by iteration: "+looping(n));
+                //document.write("<br/>Fibonacci Series by recursion: "+recursive(n));
+            }
+        </script>
+    </head>
+    <body>
+        <h2>Program to print Fibonacci series</h2>
+        <button onclick="printFibo()">Fibonacci series</button>
+    </body>
+</html>

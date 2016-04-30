@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" type="text/css" href="./css/style.css">
+
+        <script type="text/javascript" src="./js/canvas-2D-controller-1.js"></script>
+    </head>
+    <body>
+        <div id="main-wrapper">
+            <div id="canvas-2d-wrapper">
+                <div id="canvas-2d-title">Simulator</div>            
+                <div id="canvas-2d-view"></div>           
+            </div>
+
+            <div id="controller-data-wrapper">
+                <div id="controller-wrapper">
+                    <div id="controller-title">Controller</div>
+                    <div id="controller-view">
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>Vp (V) Peak Voltage</td>
+                                    <td><input id="vp" type="text" name="Vp" size="10" value="1"></td>
+                                </tr>
+                                <tr>
+                                    <td>fo (Hz) Sine frequency</td>
+                                    <td><input id="fo" type="text" name="fo" size="10" value="1000"></td>
+                                </tr>
+                                <tr>
+                                    <td>Phase (deg) Time Shift</td>
+                                    <td><input id="phase" type="text" name="phase" size="10" value="0"></td>
+                                </tr>
+                                <tr>
+                                    <td>Vmax (V) for plot</td>
+                                    <td><input id="vmax" type="text" name="Vmax" size="10" value="2"></td>
+                                </tr>
+                                <tr>
+                                    <td>Tmax (s) for plot</td>
+                                    <td><input id="tmax" type="text" name="Tmax" size="10" value="0.001"></td>
+                                </tr>
+                                <tr>
+                                    <td>Npoints for plot</td>
+                                    <td><input id="n" type="text" name="N" size="10" value="101"></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="button" value="Draw" onclick="draw()"></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <input id="pick-voltage-slider" type="range" min="-2" max="2" step="0.1" value="0" oninput="sliderChange()">
+                        <input id="pick-voltage-value" type="text" size="2" value="0">
+                    </div>  
+                </div>
+                <div id="data-wrapper">
+                    <div id="data-title">Data</div>
+                    <div id="data-view"></div> 
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

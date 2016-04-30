@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" type="text/css" href="./css/style.css">
+        
+        <script type="text/javascript" src="./js/canvas-2D-controller.js"></script>
+    </head>
+    <body>
+        <div id="main-wrapper">
+            <div id="canvas-2d-wrapper">
+                <div id="canvas-2d-title">Simulator</div>            
+                <div id="canvas-2d-view"></div>           
+            </div>
+
+            <div id="controller-data-wrapper">
+                <div id="controller-wrapper">
+                    <div id="controller-title">Controller</div>
+                    <div id="controller-view">
+                        <input id="slider1" type="range" min="-200" max="200" step="10" value="0" oninput="sliderChange()">
+                        <input id="rangeValue1" type="text" size="2" value="0">
+                    </div>  
+                </div>
+                <div id="data-wrapper">
+                    <div id="data-title">Data</div>
+                    <div id="data-view"></div> 
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

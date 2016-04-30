@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript">
+            function draw() {
+                var canvas = document.getElementById("canvas2D");
+                if (canvas === null || !canvas.getContext)
+                    return;
+
+                var axes = {}, ctx = canvas.getContext("2d");
+                axes.x0 = .5 + .5 * canvas.width;  // x0 pixels from left to x=0
+                axes.y0 = .5 + .5 * canvas.height; // y0 pixels from top to y=0
+                axes.scale = 40;                 // 40 pixels from x=0 to x=1
+                axes.doNegativeX = true;
+
+                showAxes(ctx, axes);
+            }
+            function showAxes(ctx, axes) {
+                var x0 = axes.x0, w = ctx.canvas.width;
+                var y0 = axes.y0, h = ctx.canvas.height;
+                var xmin = axes.doNegativeX ? 0 : x0;
+                ctx.beginPath();
+                ctx.strokeStyle = "rgb(128,128,128)";
+                ctx.moveTo(xmin, y0);
+                ctx.lineTo(w, y0);  // X axis
+                ctx.moveTo(x0, 0);
+                ctx.lineTo(x0, h);  // Y axis
+                ctx.stroke();
+            }
+        </script>
+    </head>
+    <body onload="draw()">
+        <div id="canvas-container" style="width: 500px; height: 300px;">
+            <canvas id="canvas2D" style="width: 500px; height: 300px;border:1px solid #000000;" width="500" height="300"></canvas>
+        </div>
+    </body>
+</html>
